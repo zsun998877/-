@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>补剂打卡</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--tx:#1f2a1f;--mut:#6b776b;--line:#e2e6df;--ac:#4a7c2f;--acs:#e6f0dd;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151a14;--card:#1f261e;--tx:#e8eee6;--mut:#92a092;--line:#2e382d;--ac:#8bc462;--acs:#27361f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#151a14;--card:#1f261e;--tx:#e8eee6;--mut:#92a092;--line:#2e382d;--ac:#8bc462;--acs:#27361f;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans","Noto Sans SC",sans-serif;line-height:1.5}
+main{max-width:520px;margin:0 auto;padding:16px}
+.nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.nav h1{font-size:20px;margin:0;text-align:center}
+.nav small{display:block;color:var(--mut);font-size:13px;font-weight:400}
+.nav button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--tx);font-size:18px;cursor:pointer}
+.nav button:disabled{opacity:.3;cursor:default}
+.prog{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.bar{height:8px;background:var(--acs);border-radius:4px;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--ac);transition:width .25s}
+.row{display:flex;justify-content:space-between;font-size:14px}
+.row span:last-child{color:var(--mut)}
+h2{font-size:13px;color:var(--mut);font-weight:600;margin:18px 4px 6px;letter-spacing:.04em}
+.item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px;color:var(--tx);font:inherit;cursor:pointer}
+.chk{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;color:transparent;font-size:15px}
+.item.on{background:var(--acs);border-color:var(--ac)}
+.item.on .chk{background:var(--ac);border-color:var(--ac);color:#fff}
+.item b{display:block;font-weight:600}
+.item span.d{color:var(--mut);font-size:13px}
+.week{display:flex;justify-content:space-between;gap:4px;margin-top:6px}
+.day{flex:1;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 0;font-size:12px;color:var(--mut);cursor:pointer}
+.day.sel{border-color:var(--ac);color:var(--tx)}
+.dot{width:14px;height:14px;border-radius:50%;margin:4px auto 0;border:2px solid var(--line)}
+.dot.p{background:linear-gradient(90deg,var(--ac) 50%,transparent 50%);border-color:var(--ac)}
+.dot.f{background:var(--ac);border-color:var(--ac)}
+details{margin-top:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+summary{cursor:pointer;font-size:14px}
+label.t{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px}
+.log{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.lr{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;font-size:14px}
+.lr input{width:90px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;text-align:center}
+.qs{display:flex;gap:6px}
+.q{padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:14px;cursor:pointer}
+.q.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.log textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:14px;resize:vertical}
+.note{color:var(--mut);font-size:12px;margin:14px 4px 0}
+</style>
+</head>
+<body>
+<main>
+  <div class="nav">
+    <button id="prev" aria-label="前一天">‹</button>
+    <h1 id="title"></h1>
+    <button id="next" aria-label="后一天">›</button>
+  </div>
+  <div class="prog">
+    <div class="row"><span id="pt"></span><span id="streak"></span></div>
+    <div class="bar"><i id="pb" style="width:0"></i></div>
+  </div>
+  <div id="list"></div>
+  <h2>今日记录</h2>
+  <div class="log">
+    <div class="lr"><label for="sl">睡眠时长（小时）</label><input id="sl" type="number" inputmode="decimal" step="0.25" min="0" max="24" placeholder="如 6.5"></div>
+    <div class="lr"><span>睡眠质量</span><span class="qs"><button class="q" data-q="差">差</button><button class="q" data-q="一般">一般</button><button class="q" data-q="好">好</button></span></div>
+    <textarea id="nt" rows="3" placeholder="备注：精神状态、情绪、有无不适…"></textarea>
+  </div>
+  <h2>最近 7 天</h2>
+  <div class="week" id="week"></div>
+  <details>
+    <summary>管理补剂（开始或暂停某一项）</summary>
+    <div id="manage"></div>
+  </details>
+  <p class="note">数据保存在当前浏览器中，清除浏览器数据会丢失记录。</p>
+</main>
+<script>
+var ITEMS=[
+ {id:"d3",n:"维生素 D3",d:"1 粒（2000 IU）"},
+ {id:"fish",n:"鱼油",d:"1 粒（EPA+DHA 约 900 mg）"},
+ {id:"zn",n:"锌铜",d:"锌 15–25 mg，不是每天必须"},
+ {id:"cr",n:"肌酸",d:"3–5 g"},
+ {id:"mg",n:"镁（甘氨酸镁）",d:"1–2 片（100–200 mg）"},
+ {id:"th",n:"L-茶氨酸",d:"1 粒（200 mg），可选"}
+];
+var GROUPS=[
+ {t:"早餐 / 午餐（随餐）",ids:["d3","fish"]},
+ {t:"午餐 / 晚餐（随餐）",ids:["zn"]},
+ {t:"任意时间",ids:["cr"]},
+ {t:"睡前 1 小时",ids:["mg","th"]}
+];
+var KEY="supp-tracker-v1";
+var S={log:{},off:["th"]};
+try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p&&p.log)S=p;}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function fmt(d){var m=d.getMonth()+1,x=d.getDate();return d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(x<10?"0":"")+x;}
+var today=new Date();today.setHours(0,0,0,0);
+var cur=new Date(today);
+function shift(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function enabled(){return ITEMS.filter(function(i){return S.off.indexOf(i.id)<0;});}
+function doneOf(k){return S.log[k]||[];}
+function count(k){var d=doneOf(k);return enabled().filter(function(i){return d.indexOf(i.id)>=0;}).length;}
+function toggle(id){
+  var k=fmt(cur),a=doneOf(k).slice(),i=a.indexOf(id);
+  if(i>=0)a.splice(i,1);else a.push(id);
+  S.log[k]=a;save();render();
+}
+function toggleOff(id){
+  var i=S.off.indexOf(id);
+  if(i>=0)S.off.splice(i,1);else S.off.push(id);
+  save();render();
+}
+function streak(){
+  var n=0,d=new Date(today),e=enabled().length;
+  if(!e)return 0;
+  if(count(fmt(d))<e)d=shift(d,-1);
+  while(count(fmt(d))>=e){n++;d=shift(d,-1);}
+  return n;
+}
+var WD=["日","一","二","三","四","五","六"];
+function render(){
+  var k=fmt(cur),e=enabled().length,c=count(k);
+  var isToday=fmt(cur)===fmt(today);
+  document.getElementById("title").innerHTML=(cur.getMonth()+1)+" 月 "+cur.getDate()+" 日 <small>周"+WD[cur.getDay()]+(isToday?" · 今天":"")+"</small>";
+  document.getElementById("next").disabled=isToday;
+  document.getElementById("pt").textContent="已完成 "+c+" / "+e;
+  document.getElementById("pb").style.width=(e?c/e*100:0)+"%";
+  var s=streak();
+  document.getElementById("streak").textContent=s?"连续 "+s+" 天全部完成":"";
+  var h="",d=doneOf(k);
+  GROUPS.forEach(function(g){
+    var its=g.ids.map(function(id){return ITEMS.filter(function(i){return i.id===id;})[0];}).filter(function(i){return S.off.indexOf(i.id)<0;});
+    if(!its.length)return;
+    h+="<h2>"+g.t+"</h2>";
+    its.forEach(function(i){
+      var on=d.indexOf(i.id)>=0;
+      h+='<button class="item'+(on?" on":"")+'" data-id="'+i.id+'"><span class="chk">✓</span><span><b>'+i.n+'</b><span class="d">'+i.d+'</span></span></button>';
+    });
+  });
+  if(!h)h='<p class="note">没有启用的补剂，请在下方“管理补剂”里开启。</p>';
+  var L=document.getElementById("list");L.innerHTML=h;
+  Array.prototype.forEach.call(L.querySelectorAll(".item"),function(b){b.onclick=function(){toggle(b.getAttribute("data-id"));};});
+  var w="";
+  for(var j=6;j>=0;j--){
+    var dd=shift(today,-j),kk=fmt(dd),cc=count(kk);
+    var cls=e&&cc>=e?"f":(cc>0?"p":"");
+    w+='<div class="day'+(kk===k?" sel":"")+'" data-k="'+kk+'">'+WD[dd.getDay()]+'<div class="dot '+cls+'"></div></div>';
+  }
+  var W=document.getElementById("week");W.innerHTML=w;
+  Array.prototype.forEach.call(W.querySelectorAll(".day"),function(x){x.onclick=function(){var p=x.getAttribute("data-k").split("-");cur=new Date(+p[0],+p[1]-1,+p[2]);render();};});
+  var mt=(S.meta&&S.meta[k])||{};
+  document.getElementById("sl").value=mt.sl||"";
+  document.getElementById("nt").value=mt.nt||"";
+  Array.prototype.forEach.call(document.querySelectorAll(".q"),function(b){b.className="q"+(mt.q===b.getAttribute("data-q")?" on":"");});
+  var m="";
+  ITEMS.forEach(function(i){m+='<label class="t"><input type="checkbox" data-o="'+i.id+'"'+(S.off.indexOf(i.id)<0?" checked":"")+'> '+i.n+'</label>';});
+  var M=document.getElementById("manage");M.innerHTML=m;
+  Array.prototype.forEach.call(M.querySelectorAll("input"),function(x){x.onchange=function(){toggleOff(x.getAttribute("data-o"));};});
+}
+function meta(){var k=fmt(cur);if(!S.meta)S.meta={};if(!S.meta[k])S.meta[k]={};return S.meta[k];}
+document.getElementById("sl").oninput=function(){meta().sl=this.value;save();};
+document.getElementById("nt").oninput=function(){meta().nt=this.value;save();};
+Array.prototype.forEach.call(document.querySelectorAll(".q"),function(b){b.onclick=function(){var m=meta(),v=b.getAttribute("data-q");m.q=(m.q===v?"":v);save();render();};});
+document.getElementById("prev").onclick=function(){cur=shift(cur,-1);render();};
+document.getElementById("next").onclick=function(){if(fmt(cur)<fmt(today)){cur=shift(cur,1);render();}};
+render();
+</script>
+</body>
+</html>
