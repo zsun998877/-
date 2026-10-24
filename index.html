@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>补剂打卡</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥐</text></svg>">
 <style>
 :root{--bg:#f6f7f4;--card:#fff;--tx:#1f2a1f;--mut:#6b776b;--line:#e2e6df;--ac:#4a7c2f;--acs:#e6f0dd;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151a14;--card:#1f261e;--tx:#e8eee6;--mut:#92a092;--line:#2e382d;--ac:#8bc462;--acs:#27361f;color-scheme:dark}}
@@ -15,6 +16,7 @@ main{max-width:520px;margin:0 auto;padding:16px}
 .nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .nav h1{font-size:20px;margin:0;text-align:center}
 .nav small{display:block;color:var(--mut);font-size:13px;font-weight:400}
+.wx{font-size:12px;color:var(--mut);text-align:center;margin-top:1px;min-height:15px}
 .nav button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--tx);font-size:18px;cursor:pointer}
 .nav button:disabled{opacity:.3;cursor:default}
 .prog{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
@@ -52,7 +54,7 @@ label.t{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px}
 <main>
   <div class="nav">
     <button id="prev" aria-label="前一天">‹</button>
-    <h1 id="title"></h1>
+    <div><h1 id="title"></h1><div class="wx" id="wx">🥐</div></div>
     <button id="next" aria-label="后一天">›</button>
   </div>
   <div class="prog">
@@ -117,12 +119,24 @@ function streak(){
   while(count(fmt(d))>=e){n++;d=shift(d,-1);}
   return n;
 }
+var WX={};
+var WXI={0:"\u2600\uFE0F",1:"\uD83C\uDF24\uFE0F",2:"\u26C5",3:"\u2601\uFE0F",45:"\uD83C\uDF2B\uFE0F",48:"\uD83C\uDF2B\uFE0F",51:"\uD83C\uDF26\uFE0F",53:"\uD83C\uDF26\uFE0F",55:"\uD83C\uDF26\uFE0F",56:"\uD83C\uDF27\uFE0F",57:"\uD83C\uDF27\uFE0F",61:"\uD83C\uDF27\uFE0F",63:"\uD83C\uDF27\uFE0F",65:"\uD83C\uDF27\uFE0F",66:"\uD83C\uDF27\uFE0F",67:"\uD83C\uDF27\uFE0F",71:"\u2744\uFE0F",73:"\u2744\uFE0F",75:"\u2744\uFE0F",77:"\u2744\uFE0F",80:"\uD83C\uDF26\uFE0F",81:"\uD83C\uDF26\uFE0F",82:"\uD83C\uDF26\uFE0F",85:"\u2744\uFE0F",86:"\u2744\uFE0F",95:"\u26C8\uFE0F",96:"\u26C8\uFE0F",99:"\u26C8\uFE0F"};
+var WXT={0:"晴",1:"晴",2:"多云",3:"阴",45:"雾",48:"雾",51:"毛毛雨",53:"毛毛雨",55:"毛毛雨",56:"冻雨",57:"冻雨",61:"小雨",63:"雨",65:"大雨",66:"冻雨",67:"冻雨",71:"小雪",73:"雪",75:"大雪",77:"雪粒",80:"阵雨",81:"阵雨",82:"暴雨",85:"阵雪",86:"阵雪",95:"雷雨",96:"雷雨",99:"雷雨"};
+function loadWx(){
+  try{
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=35.5714&longitude=139.3734&daily=weather_code,temperature_2m_max,temperature_2m_min&past_days=7&forecast_days=7&timezone=Asia%2FTokyo").then(function(r){return r.json();}).then(function(j){
+      if(j&&j.daily&&j.daily.time){for(var i=0;i<j.daily.time.length;i++){WX[j.daily.time[i]]={c:j.daily.weather_code[i],hi:j.daily.temperature_2m_max[i],lo:j.daily.temperature_2m_min[i]};}render();}
+    }).catch(function(){});
+  }catch(e){}
+}
 var WD=["日","一","二","三","四","五","六"];
 function render(){
   var k=fmt(cur),e=enabled().length,c=count(k);
   var isToday=fmt(cur)===fmt(today);
   document.getElementById("title").innerHTML=(cur.getMonth()+1)+" 月 "+cur.getDate()+" 日 <small>周"+WD[cur.getDay()]+(isToday?" · 今天":"")+"</small>";
   document.getElementById("next").disabled=isToday;
+  var wxx=WX[k];
+  document.getElementById("wx").textContent="\uD83E\uDD50"+(wxx?" "+(WXI[wxx.c]||"")+" "+(WXT[wxx.c]||"")+" "+Math.round(wxx.hi)+"\u00B0 / "+Math.round(wxx.lo)+"\u00B0":"");
   document.getElementById("pt").textContent="已完成 "+c+" / "+e;
   document.getElementById("pb").style.width=(e?c/e*100:0)+"%";
   var s=streak();
@@ -163,6 +177,7 @@ document.getElementById("nt").oninput=function(){meta().nt=this.value;save();};
 Array.prototype.forEach.call(document.querySelectorAll(".q"),function(b){b.onclick=function(){var m=meta(),v=b.getAttribute("data-q");m.q=(m.q===v?"":v);save();render();};});
 document.getElementById("prev").onclick=function(){cur=shift(cur,-1);render();};
 document.getElementById("next").onclick=function(){if(fmt(cur)<fmt(today)){cur=shift(cur,1);render();}};
+loadWx();
 render();
 </script>
 </body>
