@@ -48,6 +48,7 @@ label.t{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px}
 .q.on{background:var(--ac);border-color:var(--ac);color:#fff}
 .log textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:14px;resize:vertical}
 .note{color:var(--mut);font-size:12px;margin:14px 4px 0}
+#fw{position:fixed;inset:0;pointer-events:none;z-index:50}
 </style>
 </head>
 <body>
@@ -106,6 +107,25 @@ function toggle(id){
   var k=fmt(cur),a=doneOf(k).slice(),i=a.indexOf(id);
   if(i>=0)a.splice(i,1);else a.push(id);
   S.log[k]=a;save();render();
+  if(i<0){var e=enabled().length;if(e>0&&count(k)>=e)celebrate();}
+}
+function celebrate(){
+  if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  var cv=document.createElement("canvas");cv.id="fw";document.body.appendChild(cv);
+  var cx=cv.getContext("2d");cv.width=window.innerWidth;cv.height=window.innerHeight;
+  var ps=[],rs=[],t0=Date.now(),cols=["#f43f5e","#f59e0b","#10b981","#3b82f6","#a855f7","#facc15"];
+  function rocket(){rs.push({x:cv.width*(0.15+Math.random()*0.7),y:cv.height+10,vx:(Math.random()-0.5)*1.5,vy:-(9+Math.random()*3.5),c:cols[Math.floor(Math.random()*cols.length)]});}
+  var launched=0;
+  var iv=setInterval(function(){if(launched<6){rocket();launched++;}else clearInterval(iv);},180);
+  function burst(r){for(var j=0;j<70;j++){var a=Math.random()*Math.PI*2,sp=1+Math.random()*4.2;ps.push({x:r.x,y:r.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,l:1,dk:0.008+Math.random()*0.012,c:r.c});}}
+  function frame(){
+    cx.clearRect(0,0,cv.width,cv.height);
+    rs=rs.filter(function(r){r.x+=r.vx;r.y+=r.vy;r.vy+=0.12;cx.beginPath();cx.arc(r.x,r.y,2.4,0,7);cx.fillStyle=r.c;cx.fill();if(r.vy>=-1){burst(r);return false;}return true;});
+    ps=ps.filter(function(p){p.x+=p.vx;p.y+=p.vy;p.vy+=0.03;p.vx*=0.99;p.vy*=0.99;p.l-=p.dk;if(p.l<=0)return false;cx.globalAlpha=Math.max(p.l,0);cx.beginPath();cx.arc(p.x,p.y,2.1,0,7);cx.fillStyle=p.c;cx.fill();return true;});
+    cx.globalAlpha=1;
+    if(Date.now()-t0<3200||rs.length||ps.length){requestAnimationFrame(frame);}else if(cv.parentNode){cv.parentNode.removeChild(cv);}
+  }
+  frame();
 }
 function toggleOff(id){
   var i=S.off.indexOf(id);
