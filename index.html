@@ -28,7 +28,6 @@ h2{font-size:13px;color:var(--mut);font-weight:600;margin:18px 4px 6px;letter-sp
 .item{display:flex;align-items:stretch;width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:8px;color:var(--tx);overflow:hidden}
 .imain{flex:1;display:flex;align-items:center;gap:12px;text-align:left;background:transparent;border:none;padding:12px 14px;color:inherit;font:inherit;cursor:pointer;min-width:0}
 .itx{min-width:0}
-.idel{flex:none;border:none;background:transparent;cursor:pointer;font-size:12px;padding:0 12px;line-height:1}
 .chk{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;color:transparent;font-size:15px}
 .item.on{background:var(--acs);border-color:var(--ac)}
 .item.on .chk{background:var(--ac);border-color:var(--ac);color:#fff}
@@ -226,13 +225,12 @@ function render(){
     h+="<h2>"+glab(gd)+"</h2>";
     its.forEach(function(i){
       var on=d.indexOf(i.id)>=0;
-      h+='<div class="item'+(on?" on":"")+'"><button class="imain" data-id="'+i.id+'"><span class="chk">✓</span><span class="itx"><b>'+inm(i)+'</b><span class="d">'+idc(i)+'</span></span></button><button class="idel" data-del="'+i.id+'" aria-label="delete">❌</button></div>';
+      h+='<div class="item'+(on?" on":"")+'"><button class="imain" data-id="'+i.id+'"><span class="chk">✓</span><span class="itx"><b>'+inm(i)+'</b><span class="d">'+idc(i)+'</span></span></button></div>';
     });
   });
   if(!h)h='<p class="note">'+T("没有启用的补剂，请在下方“管理补剂”里开启。","有効なサプリがありません。下の「サプリ管理」でオンにしてください。")+'</p>';
   var LST=document.getElementById("list");LST.innerHTML=h;
   Array.prototype.forEach.call(LST.querySelectorAll(".imain"),function(b){b.onclick=function(){toggle(b.getAttribute("data-id"));};});
-  Array.prototype.forEach.call(LST.querySelectorAll(".idel"),function(b){b.onclick=function(){delItem(b.getAttribute("data-del"));};});
   var w="";
   for(var j=6;j>=0;j--){
     var dd=shift(today,-j),kk=fmt(dd),cc=count(kk);
