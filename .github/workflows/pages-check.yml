@@ -7,10 +7,10 @@ on:
     paths:
       - 'index.html'
   pull_request:
-      branches: [main]
-          paths:
-                - 'index.html'
-                workflow_dispatch:  # 也允许在 Actions 页面手动点一下运行
+    branches: [main]
+    paths:
+      - 'index.html'
+  workflow_dispatch:  # 也允许在 Actions 页面手动点一下运行
 
 env:
   PAGES_URL: https://zsun998877.github.io/-/
