@@ -25,7 +25,10 @@ main{max-width:520px;margin:0 auto;padding:16px}
 .row{display:flex;justify-content:space-between;font-size:14px}
 .row span:last-child{color:var(--mut)}
 h2{font-size:13px;color:var(--mut);font-weight:600;margin:18px 4px 6px;letter-spacing:.04em}
-.item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px;color:var(--tx);font:inherit;cursor:pointer}
+.item{display:flex;align-items:stretch;width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:8px;color:var(--tx);overflow:hidden}
+.imain{flex:1;display:flex;align-items:center;gap:12px;text-align:left;background:transparent;border:none;padding:12px 14px;color:inherit;font:inherit;cursor:pointer;min-width:0}
+.itx{min-width:0}
+.idel{flex:none;border:none;background:transparent;cursor:pointer;font-size:12px;padding:0 12px;line-height:1}
 .chk{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;color:transparent;font-size:15px}
 .item.on{background:var(--acs);border-color:var(--ac)}
 .item.on .chk{background:var(--ac);border-color:var(--ac);color:#fff}
@@ -49,10 +52,22 @@ label.t{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px}
 .log textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:14px;resize:vertical}
 .note{color:var(--mut);font-size:12px;margin:14px 4px 0}
 #fw{position:fixed;inset:0;pointer-events:none;z-index:50}
+.toprow{display:flex;justify-content:flex-start;margin-bottom:8px}
+#lang{border:1px solid var(--line);background:var(--card);color:var(--tx);border-radius:999px;padding:5px 14px;font:inherit;font-size:13px;cursor:pointer}
+.mg{font-size:12px;color:var(--mut);font-weight:600;margin:10px 0 2px}
+.mrow{display:flex;align-items:center;gap:8px}
+.mrow .t{flex:1}
+.msel{padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:13px}
+.del{border:none;background:transparent;border-radius:8px;padding:4px 6px;font-size:13px;cursor:pointer;line-height:1}
+.add{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.add input{flex:1;min-width:110px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:14px}
+.add select{padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:14px}
+.add button{padding:8px 16px;border-radius:10px;border:1px solid var(--ac);background:var(--ac);color:#fff;font:inherit;font-size:14px;cursor:pointer}
 </style>
 </head>
 <body>
 <main>
+  <div class="toprow"><button id="lang" type="button">日本語</button></div>
   <div class="nav">
     <button id="prev" aria-label="前一天">‹</button>
     <div><h1 id="title"></h1><div class="wx" id="wx">🥐</div></div>
@@ -63,38 +78,51 @@ label.t{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px}
     <div class="bar"><i id="pb" style="width:0"></i></div>
   </div>
   <div id="list"></div>
-  <h2>今日记录</h2>
+  <h2 id="hLog">今日记录</h2>
   <div class="log">
-    <div class="lr"><label for="sl">睡眠时长（小时）</label><input id="sl" type="number" inputmode="decimal" step="0.25" min="0" max="24" placeholder="如 6.5"></div>
-    <div class="lr"><span>睡眠质量</span><span class="qs"><button class="q" data-q="差">差</button><button class="q" data-q="一般">一般</button><button class="q" data-q="好">好</button></span></div>
+    <div class="lr"><label for="sl" id="slLabel">睡眠时长（小时）</label><input id="sl" type="number" inputmode="decimal" step="0.25" min="0" max="24" placeholder="如 6.5"></div>
+    <div class="lr"><span id="sqLabel">睡眠质量</span><span class="qs"><button class="q" data-q="差">差</button><button class="q" data-q="一般">一般</button><button class="q" data-q="好">好</button></span></div>
     <textarea id="nt" rows="3" placeholder="备注：精神状态、情绪、有无不适…"></textarea>
   </div>
-  <h2>最近 7 天</h2>
+  <h2 id="hWeek">最近 7 天</h2>
   <div class="week" id="week"></div>
   <details>
-    <summary>管理补剂（开始或暂停某一项）</summary>
+    <summary id="mSum">管理补剂（开始、暂停、分组、添加）</summary>
     <div id="manage"></div>
+    <div class="add">
+      <input id="cn" type="text" placeholder="新补剂名称，如：维生素 C">
+      <input id="cd" type="text" placeholder="剂量说明（可不填）">
+      <select id="cg"></select>
+      <button id="cadd" type="button">添加</button>
+    </div>
   </details>
-  <p class="note">数据保存在当前浏览器中，清除浏览器数据会丢失记录。</p>
+  <p class="note" id="noteP">数据保存在当前浏览器中，清除浏览器数据会丢失记录。</p>
 </main>
 <script>
-var ITEMS=[
- {id:"d3",n:"维生素 D3",d:"1 粒（2000 IU）"},
- {id:"fish",n:"鱼油",d:"1 粒（EPA+DHA 约 900 mg）"},
- {id:"zn",n:"锌铜",d:"锌 15–25 mg，不是每天必须"},
- {id:"cr",n:"肌酸",d:"3–5 g"},
- {id:"mg",n:"镁（甘氨酸镁）",d:"1–2 片（100–200 mg）"},
- {id:"th",n:"L-茶氨酸",d:"1 粒（200 mg），可选"}
+var DEF_ITEMS=[
+ {id:"d3",n:"维生素 D3",nj:"ビタミン D3",d:"1 粒（2000 IU）",dj:"1 粒（2000 IU）",g:"早"},
+ {id:"fish",n:"鱼油",nj:"魚油",d:"1 粒（EPA+DHA 约 900 mg）",dj:"1 粒（EPA+DHA 約 900 mg）",g:"早"},
+ {id:"zn",n:"锌铜",nj:"亜鉛・銅",d:"锌 15–25 mg，不是每天必须",dj:"亜鉛 15–25 mg、毎日でなくてOK",g:"中"},
+ {id:"cr",n:"肌酸",nj:"クレアチン",d:"3–5 g",dj:"3–5 g",g:"任"},
+ {id:"mg",n:"镁（甘氨酸镁）",nj:"マグネシウム",d:"1–2 片（100–200 mg）",dj:"1–2 錠（100–200 mg）",g:"晚"},
+ {id:"th",n:"L-茶氨酸",nj:"L-テアニン",d:"1 粒（200 mg），可选",dj:"1 粒（200 mg）、任意",g:"晚"}
 ];
-var GROUPS=[
- {t:"早餐 / 午餐（随餐）",ids:["d3","fish"]},
- {t:"午餐 / 晚餐（随餐）",ids:["zn"]},
- {t:"任意时间",ids:["cr"]},
- {t:"睡前 1 小时",ids:["mg","th"]}
+var GDEF=[
+ {g:"早",zh:"早餐（随餐）",ja:"朝（食事と一緒に）"},
+ {g:"中",zh:"午餐（随餐）",ja:"昼（食事と一緒に）"},
+ {g:"晚",zh:"晚餐 / 睡前",ja:"夜・就寝前"},
+ {g:"任",zh:"任意时间",ja:"いつでも"}
 ];
 var KEY="supp-tracker-v1";
 var S={log:{},off:["th"]};
 try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p&&p.log)S=p;}}catch(e){}
+var ITEMS=(S.items&&S.items.length)?S.items:DEF_ITEMS.slice();
+var L=S.lang==="ja"?"ja":"zh";
+function T(zh,ja){return L==="ja"?ja:zh;}
+function inm(i){return L==="ja"?(i.nj||i.n):i.n;}
+function idc(i){return L==="ja"?(i.dj||i.d):i.d;}
+function glab(gd){return L==="ja"?gd.ja:gd.zh;}
+function persistItems(){S.items=ITEMS;}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function fmt(d){var m=d.getMonth()+1,x=d.getDate();return d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(x<10?"0":"")+x;}
 var today=new Date();today.setHours(0,0,0,0);
@@ -150,35 +178,66 @@ function loadWx(){
   }catch(e){}
 }
 var WD=["日","一","二","三","四","五","六"];
+var WDJ=["日","月","火","水","木","金","土"];
+var WXTJ={0:"晴れ",1:"晴れ",2:"曇り",3:"曇り",45:"霧",48:"霧",51:"霧雨",53:"霧雨",55:"霧雨",56:"雨氷",57:"雨氷",61:"小雨",63:"雨",65:"大雨",66:"雨氷",67:"雨氷",71:"小雪",73:"雪",75:"大雪",77:"雪",80:"にわか雨",81:"にわか雨",82:"にわか雨",85:"にわか雪",86:"にわか雪",95:"雷雨",96:"雷雨",99:"雷雨"};
+function setGroup(id,g){for(var j=0;j<ITEMS.length;j++){if(ITEMS[j].id===id){ITEMS[j].g=g;break;}}persistItems();save();render();}
+function delItem(id){ITEMS=ITEMS.filter(function(i){return i.id!==id;});var o=S.off.indexOf(id);if(o>=0)S.off.splice(o,1);persistItems();save();render();}
+function addItem(){
+  var n=document.getElementById("cn").value.trim();if(!n)return;
+  var d=document.getElementById("cd").value.trim();
+  ITEMS.push({id:"c"+Date.now(),n:n,nj:n,d:d,dj:d,g:document.getElementById("cg").value,cu:1});
+  persistItems();save();
+  document.getElementById("cn").value="";document.getElementById("cd").value="";render();
+}
 function render(){
   var k=fmt(cur),e=enabled().length,c=count(k);
   var isToday=fmt(cur)===fmt(today);
-  document.getElementById("title").innerHTML=(cur.getMonth()+1)+" 月 "+cur.getDate()+" 日 <small>周"+WD[cur.getDay()]+(isToday?" · 今天":"")+"</small>";
+  var WDA=L==="ja"?WDJ:WD;
+  var wdstr=L==="ja"?"（"+WDA[cur.getDay()]+"）":"周"+WDA[cur.getDay()];
+  document.title=T("补剂打卡","サプリチェック");
+  document.getElementById("title").innerHTML=(cur.getMonth()+1)+" 月 "+cur.getDate()+" 日 <small>"+wdstr+(isToday?T(" · 今天"," ・今日"):"")+"</small>";
   document.getElementById("next").disabled=isToday;
   var wxx=WX[k];
-  document.getElementById("wx").textContent="\uD83E\uDD50"+(wxx?" "+(WXI[wxx.c]||"")+" "+(WXT[wxx.c]||"")+" "+Math.round(wxx.hi)+"\u00B0 / "+Math.round(wxx.lo)+"\u00B0":"");
-  document.getElementById("pt").textContent="已完成 "+c+" / "+e;
+  var wxt=L==="ja"?WXTJ:WXT;
+  document.getElementById("wx").textContent="\uD83E\uDD50"+(wxx?" "+(WXI[wxx.c]||"")+" "+(wxt[wxx.c]||"")+" "+Math.round(wxx.hi)+"\u00B0 / "+Math.round(wxx.lo)+"\u00B0":"");
+  document.getElementById("pt").textContent=T("已完成 ","完了 ")+c+" / "+e;
   document.getElementById("pb").style.width=(e?c/e*100:0)+"%";
   var s=streak();
-  document.getElementById("streak").textContent=s?"连续 "+s+" 天全部完成":"";
+  document.getElementById("streak").textContent=s?T("连续 "+s+" 天全部完成",s+" 日連続で全完了"):"";
+  document.getElementById("lang").textContent=L==="ja"?"中文":"日本語";
+  document.getElementById("hLog").textContent=T("今日记录","今日の記録");
+  document.getElementById("slLabel").textContent=T("睡眠时长（小时）","睡眠時間（時間）");
+  document.getElementById("sqLabel").textContent=T("睡眠质量","睡眠の質");
+  document.getElementById("nt").placeholder=T("备注：精神状态、情绪、有无不适…","メモ：体調、気分、不調など…");
+  document.getElementById("hWeek").textContent=T("最近 7 天","最近 7 日間");
+  document.getElementById("mSum").textContent=T("管理补剂（开始、暂停、分组、添加）","サプリ管理（開始・停止・グループ・追加）");
+  document.getElementById("noteP").textContent=T("数据保存在当前浏览器中，清除浏览器数据会丢失记录。","データはこのブラウザに保存されます。ブラウザのデータを消すと記録も消えます。");
+  document.getElementById("cn").placeholder=T("新补剂名称，如：维生素 C","新しいサプリ名、例：ビタミン C");
+  document.getElementById("cd").placeholder=T("剂量说明（可不填）","用量メモ（任意）");
+  document.getElementById("cadd").textContent=T("添加","追加");
+  var cg=document.getElementById("cg"),cvv=cg.value;
+  cg.innerHTML=GDEF.map(function(gd){return '<option value="'+gd.g+'">'+glab(gd)+'</option>';}).join("");
+  if(cvv)cg.value=cvv;
+  Array.prototype.forEach.call(document.querySelectorAll(".q"),function(b){var q=b.getAttribute("data-q");b.textContent=q==="差"?T("差","イマイチ"):q==="一般"?T("一般","普通"):T("好","良い");});
   var h="",d=doneOf(k);
-  GROUPS.forEach(function(g){
-    var its=g.ids.map(function(id){return ITEMS.filter(function(i){return i.id===id;})[0];}).filter(function(i){return S.off.indexOf(i.id)<0;});
+  GDEF.forEach(function(gd){
+    var its=ITEMS.filter(function(i){return i.g===gd.g&&S.off.indexOf(i.id)<0;});
     if(!its.length)return;
-    h+="<h2>"+g.t+"</h2>";
+    h+="<h2>"+glab(gd)+"</h2>";
     its.forEach(function(i){
       var on=d.indexOf(i.id)>=0;
-      h+='<button class="item'+(on?" on":"")+'" data-id="'+i.id+'"><span class="chk">✓</span><span><b>'+i.n+'</b><span class="d">'+i.d+'</span></span></button>';
+      h+='<div class="item'+(on?" on":"")+'"><button class="imain" data-id="'+i.id+'"><span class="chk">✓</span><span class="itx"><b>'+inm(i)+'</b><span class="d">'+idc(i)+'</span></span></button><button class="idel" data-del="'+i.id+'" aria-label="delete">❌</button></div>';
     });
   });
-  if(!h)h='<p class="note">没有启用的补剂，请在下方“管理补剂”里开启。</p>';
-  var L=document.getElementById("list");L.innerHTML=h;
-  Array.prototype.forEach.call(L.querySelectorAll(".item"),function(b){b.onclick=function(){toggle(b.getAttribute("data-id"));};});
+  if(!h)h='<p class="note">'+T("没有启用的补剂，请在下方“管理补剂”里开启。","有効なサプリがありません。下の「サプリ管理」でオンにしてください。")+'</p>';
+  var LST=document.getElementById("list");LST.innerHTML=h;
+  Array.prototype.forEach.call(LST.querySelectorAll(".imain"),function(b){b.onclick=function(){toggle(b.getAttribute("data-id"));};});
+  Array.prototype.forEach.call(LST.querySelectorAll(".idel"),function(b){b.onclick=function(){delItem(b.getAttribute("data-del"));};});
   var w="";
   for(var j=6;j>=0;j--){
     var dd=shift(today,-j),kk=fmt(dd),cc=count(kk);
     var cls=e&&cc>=e?"f":(cc>0?"p":"");
-    w+='<div class="day'+(kk===k?" sel":"")+'" data-k="'+kk+'">'+WD[dd.getDay()]+'<div class="dot '+cls+'"></div></div>';
+    w+='<div class="day'+(kk===k?" sel":"")+'" data-k="'+kk+'">'+WDA[dd.getDay()]+'<div class="dot '+cls+'"></div></div>';
   }
   var W=document.getElementById("week");W.innerHTML=w;
   Array.prototype.forEach.call(W.querySelectorAll(".day"),function(x){x.onclick=function(){var p=x.getAttribute("data-k").split("-");cur=new Date(+p[0],+p[1]-1,+p[2]);render();};});
@@ -187,14 +246,26 @@ function render(){
   document.getElementById("nt").value=mt.nt||"";
   Array.prototype.forEach.call(document.querySelectorAll(".q"),function(b){b.className="q"+(mt.q===b.getAttribute("data-q")?" on":"");});
   var m="";
-  ITEMS.forEach(function(i){m+='<label class="t"><input type="checkbox" data-o="'+i.id+'"'+(S.off.indexOf(i.id)<0?" checked":"")+'> '+i.n+'</label>';});
+  GDEF.forEach(function(gd){
+    var its=ITEMS.filter(function(i){return i.g===gd.g;});
+    if(!its.length)return;
+    m+='<div class="mg">'+glab(gd)+'</div>';
+    its.forEach(function(i){
+      m+='<div class="mrow"><label class="t"><input type="checkbox" data-o="'+i.id+'"'+(S.off.indexOf(i.id)<0?" checked":"")+'> '+inm(i)+'</label><select class="msel" data-g="'+i.id+'">'+GDEF.map(function(x){return '<option value="'+x.g+'"'+(x.g===i.g?" selected":"")+'>'+glab(x)+'</option>';}).join("")+'</select><button class="del" data-del="'+i.id+'" aria-label="delete">❌</button></div>';
+    });
+  });
+  if(!m)m='<p class="note">'+T("还没有补剂，用下面的表单添加。","サプリがまだありません。下のフォームから追加してください。")+'</p>';
   var M=document.getElementById("manage");M.innerHTML=m;
   Array.prototype.forEach.call(M.querySelectorAll("input"),function(x){x.onchange=function(){toggleOff(x.getAttribute("data-o"));};});
+  Array.prototype.forEach.call(M.querySelectorAll(".msel"),function(x){x.onchange=function(){setGroup(x.getAttribute("data-g"),x.value);};});
+  Array.prototype.forEach.call(M.querySelectorAll(".del"),function(x){x.onclick=function(){delItem(x.getAttribute("data-del"));};});
 }
 function meta(){var k=fmt(cur);if(!S.meta)S.meta={};if(!S.meta[k])S.meta[k]={};return S.meta[k];}
 document.getElementById("sl").oninput=function(){meta().sl=this.value;save();};
 document.getElementById("nt").oninput=function(){meta().nt=this.value;save();};
 Array.prototype.forEach.call(document.querySelectorAll(".q"),function(b){b.onclick=function(){var m=meta(),v=b.getAttribute("data-q");m.q=(m.q===v?"":v);save();render();};});
+document.getElementById("lang").onclick=function(){L=L==="ja"?"zh":"ja";S.lang=L;save();render();};
+document.getElementById("cadd").onclick=addItem;
 document.getElementById("prev").onclick=function(){cur=shift(cur,-1);render();};
 document.getElementById("next").onclick=function(){if(fmt(cur)<fmt(today)){cur=shift(cur,1);render();}};
 loadWx();
